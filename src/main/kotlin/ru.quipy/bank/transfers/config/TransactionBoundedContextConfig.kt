@@ -10,7 +10,7 @@ import ru.quipy.core.EventSourcingServiceFactory
 import java.util.*
 
 @Configuration
-class TransactionCoundedContextConfig {
+class TransactionBoundedContextConfig {
 
     @Autowired
     private lateinit var eventSourcingServiceFactory: EventSourcingServiceFactory
