@@ -10,8 +10,8 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
-import ru.quipy.bankDemo.accounts.api.AccountAggregate
-import ru.quipy.bankDemo.accounts.logic.Account
+import ru.quipy.bank.accounts.api.AccountAggregate
+import ru.quipy.bank.accounts.logic.Account
 import ru.quipy.core.EventSourcingService
 import java.math.BigDecimal
 import java.util.*

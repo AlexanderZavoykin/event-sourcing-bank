@@ -1,4 +1,4 @@
-package ru.quipy.bankDemo.transfers.projections
+package ru.quipy.bank.transfers.projections
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -7,8 +7,8 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
-import ru.quipy.bankDemo.accounts.api.AccountAggregate
-import ru.quipy.bankDemo.accounts.api.BankAccountCreatedEvent
+import ru.quipy.bank.accounts.api.AccountAggregate
+import ru.quipy.bank.accounts.api.BankAccountCreatedEvent
 import ru.quipy.streams.AggregateSubscriptionsManager
 import java.util.*
 import javax.annotation.PostConstruct

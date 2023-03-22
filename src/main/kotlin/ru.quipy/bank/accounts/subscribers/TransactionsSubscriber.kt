@@ -1,13 +1,13 @@
-package ru.quipy.bankDemo.accounts.subscribers
+package ru.quipy.bank.accounts.subscribers
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import ru.quipy.bankDemo.accounts.api.AccountAggregate
-import ru.quipy.bankDemo.transfers.api.TransferTransactionAggregate
-import ru.quipy.bankDemo.transfers.api.TransferTransactionCreatedEvent
-import ru.quipy.bankDemo.accounts.logic.Account
-import ru.quipy.bankDemo.transfers.api.TransactionConfirmedEvent
+import ru.quipy.bank.accounts.api.AccountAggregate
+import ru.quipy.bank.transfers.api.TransferTransactionAggregate
+import ru.quipy.bank.transfers.api.TransferTransactionCreatedEvent
+import ru.quipy.bank.accounts.logic.Account
+import ru.quipy.bank.transfers.api.TransactionConfirmedEvent
 import ru.quipy.core.EventSourcingService
 import ru.quipy.streams.AggregateSubscriptionsManager
 import java.util.*

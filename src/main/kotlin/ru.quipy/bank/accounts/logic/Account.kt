@@ -1,15 +1,11 @@
-package ru.quipy.bankDemo.accounts.logic
+package ru.quipy.bank.accounts.logic
 
-import ru.quipy.bankDemo.accounts.api.*
+import ru.quipy.bank.accounts.api.*
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import ru.quipy.domain.Event
 import java.math.BigDecimal
 import java.util.*
-
-// вопрос, что делать, если, скажем, обрабатываем какой-то ивент, понимаем, что агрегата, который нужно обновить не существует.
-// Может ли ивент (ошибка) существовать в отрыве от агрегата?
-
 
 class Account : AggregateState<UUID, AccountAggregate> {
     private lateinit var accountId: UUID

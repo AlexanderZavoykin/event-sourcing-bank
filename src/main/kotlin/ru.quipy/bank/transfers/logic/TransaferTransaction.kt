@@ -1,9 +1,9 @@
-package ru.quipy.bankDemo.transfers.logic
+package ru.quipy.bank.transfers.logic
 
-import ru.quipy.bankDemo.transfers.api.*
-import ru.quipy.bankDemo.transfers.logic.TransferTransaction.ParticipantState.*
-import ru.quipy.bankDemo.transfers.logic.TransferTransaction.TransactionState.*
-import ru.quipy.bankDemo.transfers.logic.TransferTransaction.TransactionState.NOT_CONFIRMED
+import ru.quipy.bank.transfers.api.*
+import ru.quipy.bank.transfers.logic.TransferTransaction.ParticipantState.*
+import ru.quipy.bank.transfers.logic.TransferTransaction.TransactionState.*
+import ru.quipy.bank.transfers.logic.TransferTransaction.TransactionState.NOT_CONFIRMED
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import ru.quipy.domain.Event

@@ -1,4 +1,4 @@
-package ru.quipy.bankDemo.transfers.api
+package ru.quipy.bank.transfers.api
 
 import ru.quipy.core.annotations.DomainEvent
 import ru.quipy.domain.Event

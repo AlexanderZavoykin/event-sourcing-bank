@@ -1,10 +1,10 @@
-package ru.quipy.bankDemo.transfers.service
+package ru.quipy.bank.transfers.service
 
 import org.springframework.stereotype.Service
-import ru.quipy.bankDemo.transfers.api.TransferTransactionAggregate
-import ru.quipy.bankDemo.transfers.api.TransferTransactionCreatedEvent
-import ru.quipy.bankDemo.transfers.logic.TransferTransaction
-import ru.quipy.bankDemo.transfers.projections.BankAccountCacheRepository
+import ru.quipy.bank.transfers.api.TransferTransactionAggregate
+import ru.quipy.bank.transfers.api.TransferTransactionCreatedEvent
+import ru.quipy.bank.transfers.logic.TransferTransaction
+import ru.quipy.bank.transfers.projections.BankAccountCacheRepository
 import ru.quipy.core.EventSourcingService
 import java.math.BigDecimal
 import java.util.*
