@@ -1,4 +1,4 @@
-package ru.quipy.bank.transfers.projections
+package ru.quipy.bank.accounts.projections
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -16,7 +16,7 @@ import javax.annotation.PostConstruct
 @Component
 class BankAccountsExistenceCache(
     private val bankAccountCacheRepository: BankAccountCacheRepository,
-    private val subscriptionsManager: AggregateSubscriptionsManager
+    private val subscriptionsManager: AggregateSubscriptionsManager,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(BankAccountsExistenceCache::class.java)
 
@@ -27,17 +27,17 @@ class BankAccountsExistenceCache(
                 bankAccountCacheRepository.save(BankAccount(event.bankAccountId, event.accountId)) // todo sukhoa idempotence!
                 logger.info("Update bank account cache, create account ${event.accountId}-${event.bankAccountId}")
             }
-            // todo sukhoa bank account deleted event
         }
     }
 }
 
-@Document("transactions-accounts-cache")
+@Repository
+interface BankAccountCacheRepository : MongoRepository<BankAccount, UUID>
+
+@Document("accounts-cache")
 data class BankAccount(
     @Id
     val bankAccountId: UUID,
     var accountId: UUID
 )
 
-@Repository
-interface BankAccountCacheRepository: MongoRepository<BankAccount, UUID>
