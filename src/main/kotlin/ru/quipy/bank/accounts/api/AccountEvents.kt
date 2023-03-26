@@ -15,7 +15,6 @@ const val TRANSFER_DEPOSIT_PERFORMED = "TRANSFER_DEPOSIT_PERFORMED"
 const val TRANSFER_WITHDRAW_PERFORMED = "TRANSFER_WITHDRAW_PERFORMED"
 const val TRANSFER_DEPOSIT_REJECTED = "TRANSFER_DEPOSIT_REJECTED"
 const val TRANSFER_WITHDRAW_REJECTED = "TRANSFER_WITHDRAW_REJECTED"
-const val TRANSFER_DEPOSIT_ROLLBACKED = "TRANSFER_DEPOSIT_ROLLBACKED"
 const val TRANSFER_WITHDRAW_ROLLBACKED = "TRANSFER_WITHDRAW_ROLLBACKED"
 
 const val NOOP = "NOOP"
@@ -105,16 +104,6 @@ data class TransferWithdrawRejectedEvent(
     val reason: String,
 ) : Event<AccountAggregate>(
     name = TRANSFER_WITHDRAW_REJECTED,
-)
-
-@DomainEvent(name = TRANSFER_DEPOSIT_ROLLBACKED)
-data class TransferDepositRollbackedEvent(
-    val transferId: UUID,
-    val accountId: UUID,
-    val bankAccountId: UUID,
-    val amount: BigDecimal,
-) : Event<AccountAggregate>(
-    name = TRANSFER_DEPOSIT_ROLLBACKED,
 )
 
 @DomainEvent(name = TRANSFER_WITHDRAW_ROLLBACKED)

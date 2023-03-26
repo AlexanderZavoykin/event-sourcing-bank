@@ -9,33 +9,32 @@ import ru.quipy.bank.accounts.api.InternalAccountTransferEvent
 import ru.quipy.bank.accounts.api.NoopEvent
 import ru.quipy.bank.accounts.api.TransferDepositPerformedEvent
 import ru.quipy.bank.accounts.api.TransferDepositRejectedEvent
-import ru.quipy.bank.accounts.api.TransferDepositRollbackedEvent
 import ru.quipy.bank.accounts.api.TransferWithdrawPerformedEvent
 import ru.quipy.bank.accounts.api.TransferWithdrawRejectedEvent
 import ru.quipy.bank.accounts.api.TransferWithdrawRollbackedEvent
-import ru.quipy.bank.accounts.logic.TransferTransactionState.PERFORMED
-import ru.quipy.bank.accounts.logic.TransferTransactionState.ROLLBACKED
-import ru.quipy.bank.accounts.logic.TransferTransactionType.DEPOSIT
-import ru.quipy.bank.accounts.logic.TransferTransactionType.WITHDRAW
 import ru.quipy.core.annotations.StateTransitionFunc
 import ru.quipy.domain.AggregateState
 import ru.quipy.domain.Event
 import java.math.BigDecimal
 import java.util.UUID
 
+private const val BANK_ACCOUNT_MAX_BALANCE = 10_000_000
+private const val BANK_ACCOUNTS_MAX_SUM_BALANCE = 25_000_000
+private const val BANK_ACCOUNTS_MAX_COUNT = 5
+
 class Account : AggregateState<UUID, AccountAggregate> {
     private lateinit var accountId: UUID
     private lateinit var holderId: UUID
     var bankAccounts: MutableMap<UUID, BankAccount> = mutableMapOf()
 
-    override fun getId() = accountId
+    override fun getId(): UUID = accountId
 
     fun createNewAccount(id: UUID = UUID.randomUUID(), holderId: UUID): AccountCreatedEvent {
         return AccountCreatedEvent(id, holderId)
     }
 
     fun createNewBankAccount(): BankAccountCreatedEvent {
-        if (bankAccounts.size >= 5)
+        if (bankAccounts.size >= BANK_ACCOUNTS_MAX_COUNT)
             throw IllegalStateException("Account $accountId already has ${bankAccounts.size} bank accounts")
 
         return BankAccountCreatedEvent(accountId = accountId, bankAccountId = UUID.randomUUID())
@@ -45,10 +44,10 @@ class Account : AggregateState<UUID, AccountAggregate> {
         val bankAccount = (bankAccounts[toBankAccountId]
             ?: throw IllegalArgumentException("No such account to transfer to: $toBankAccountId"))
 
-        if (bankAccount.balance + amount > BigDecimal(10_000_000))
+        if (bankAccount.balance + amount > BigDecimal(BANK_ACCOUNT_MAX_BALANCE))
             throw IllegalStateException("You can't store more than 10.000.000 on account ${bankAccount.id}")
 
-        if (bankAccounts.values.sumOf { it.balance } + amount > BigDecimal(25_000_000))
+        if (bankAccounts.values.sumOf { it.balance } + amount > BigDecimal(BANK_ACCOUNTS_MAX_SUM_BALANCE))
             throw IllegalStateException("You can't store more than 25.000.000 in total")
 
 
@@ -90,7 +89,7 @@ class Account : AggregateState<UUID, AccountAggregate> {
             ?: throw IllegalArgumentException("No such account to transfer to: $toBankAccountId"))
 
 
-        if (bankAccountTo.balance + transferAmount > BigDecimal(10_000_000))
+        if (bankAccountTo.balance + transferAmount > BigDecimal(BANK_ACCOUNT_MAX_BALANCE))
             throw IllegalStateException("You can't store more than 10.000.000 on account ${bankAccountTo.id}")
 
         return InternalAccountTransferEvent(
@@ -109,7 +108,7 @@ class Account : AggregateState<UUID, AccountAggregate> {
         val bankAccount = bankAccounts[bankAccountId]
             ?: throw IllegalArgumentException("No such account to transfer to: $bankAccountId")
 
-        if (bankAccount.balance + amount > BigDecimal(10_000_000)) {
+        if (bankAccount.balance + amount > BigDecimal(BANK_ACCOUNT_MAX_BALANCE)) {
             return TransferDepositRejectedEvent(
                 transferId = transferId,
                 accountId = accountId,
@@ -119,7 +118,7 @@ class Account : AggregateState<UUID, AccountAggregate> {
             )
         }
 
-        if (bankAccounts.values.sumOf { it.balance } + amount > BigDecimal(25_000_000)) {
+        if (bankAccounts.values.sumOf { it.balance } + amount > BigDecimal(BANK_ACCOUNTS_MAX_SUM_BALANCE)) {
             return TransferDepositRejectedEvent(
                 transferId = transferId,
                 accountId = accountId,
@@ -163,25 +162,6 @@ class Account : AggregateState<UUID, AccountAggregate> {
         )
     }
 
-    fun rollbackTransferDeposit(
-        transferId: UUID,
-        bankAccountId: UUID,
-        amount: BigDecimal,
-    ): TransferDepositRollbackedEvent {
-        val bankAccount = bankAccounts[bankAccountId]
-            ?: throw IllegalArgumentException("No such account to rollback transfer deposit: $bankAccountId")
-
-        bankAccount.transferTransactions[transferId]
-            ?: throw IllegalArgumentException("Transfer deposit $transferId was never made to bank account $bankAccountId")
-
-        return TransferDepositRollbackedEvent(
-            transferId = transferId,
-            accountId = accountId,
-            bankAccountId = bankAccountId,
-            amount = amount,
-        )
-    }
-
     fun rollbackTransferWithdraw(
         transferId: UUID,
         bankAccountId: UUID,
@@ -190,8 +170,9 @@ class Account : AggregateState<UUID, AccountAggregate> {
         val bankAccount = bankAccounts[bankAccountId]
             ?: throw IllegalArgumentException("No such account to rollback transfer deposit: $bankAccountId")
 
-        bankAccount.transferTransactions[transferId]
-            ?: throw IllegalArgumentException("Transfer withdraw $transferId was never made from bank account $bankAccountId")
+        if (!bankAccount.checkTransferWithdraw(transferId, amount)) {
+            throw IllegalArgumentException("Transfer withdraw $transferId was never made from bank account $bankAccountId")
+        }
 
         return TransferWithdrawRollbackedEvent(
             transferId = transferId,
@@ -232,50 +213,36 @@ class Account : AggregateState<UUID, AccountAggregate> {
     fun transferDeposit(event: TransferDepositPerformedEvent) {
         val bankAccount = bankAccounts[event.bankAccountId]!!
         bankAccount.deposit(event.amount)
-        bankAccount.transferTransactions[event.transferId] =
-            TransferTransaction(
-                transferId = event.transferId,
-                amount = event.amount,
-                type = DEPOSIT,
-                state = PERFORMED,
-            )
     }
 
     @StateTransitionFunc
     fun transferWithdraw(event: TransferWithdrawPerformedEvent) {
         val bankAccount = bankAccounts[event.bankAccountId]!!
         bankAccount.withdraw(event.amount)
-        bankAccount.transferTransactions[event.transferId] =
-            TransferTransaction(
-                transferId = event.transferId,
-                amount = event.amount,
-                type = WITHDRAW,
-                state = PERFORMED,
-            )
-    }
-
-    @StateTransitionFunc
-    fun rollbackTransferDeposit(event: TransferDepositRollbackedEvent) {
-        val bankAccount = bankAccounts[event.bankAccountId]!!
-        bankAccount.withdraw(event.amount)
-        bankAccount.transferTransactions[event.transferId]!!.state = ROLLBACKED
+        bankAccount.addTransferWithdraw(event.transferId, event.amount)
     }
 
     @StateTransitionFunc
     fun rollbackTransferWithdraw(event: TransferWithdrawRollbackedEvent) {
         val bankAccount = bankAccounts[event.bankAccountId]!!
         bankAccount.deposit(event.amount)
-        bankAccount.transferTransactions[event.transferId]!!.state = ROLLBACKED
+        bankAccount.removeTransferWithdraw(event.transferId)
     }
 
     @StateTransitionFunc
-    fun noop(event: NoopEvent) = Unit
+    fun noop(event: NoopEvent) {
+        // do nothing
+    }
 
     @StateTransitionFunc
-    fun processAnotherParticipantTransferDepositRejection(event: TransferDepositRejectedEvent) = Unit
+    fun rejectTransferDeposit(event: TransferDepositRejectedEvent) {
+        // do nothing
+    }
 
     @StateTransitionFunc
-    fun processAnotherParticipantTransferWithdrawRejection(event: TransferWithdrawRejectedEvent) = Unit
+    fun rejectTransferWithdraw(event: TransferWithdrawRejectedEvent) {
+        // do nothing
+    }
 
 }
 
@@ -283,8 +250,10 @@ class Account : AggregateState<UUID, AccountAggregate> {
 data class BankAccount(
     val id: UUID,
     internal var balance: BigDecimal = BigDecimal.ZERO,
-    internal var transferTransactions: MutableMap<UUID, TransferTransaction> = mutableMapOf(),
-) {
+
+    ) {
+    private var transferWithdraws: MutableMap<UUID, TransferWithdraw> = mutableMapOf()
+
     fun deposit(amount: BigDecimal) {
         this.balance = this.balance.add(amount)
     }
@@ -292,21 +261,24 @@ data class BankAccount(
     fun withdraw(amount: BigDecimal) {
         this.balance = this.balance.subtract(amount)
     }
+
+    fun addTransferWithdraw(transferId: UUID, amount: BigDecimal) {
+        transferWithdraws[transferId] = TransferWithdraw(transferId, amount)
+    }
+
+    fun removeTransferWithdraw(transferId: UUID) {
+        transferWithdraws.remove(transferId)
+    }
+
+    fun checkTransferWithdraw(transferId: UUID, amount: BigDecimal): Boolean {
+        val withdraw = transferWithdraws[transferId]
+
+        return withdraw != null && withdraw.amount == amount
+    }
+
 }
 
-data class TransferTransaction(
+data class TransferWithdraw(
     val transferId: UUID,
     val amount: BigDecimal,
-    val type: TransferTransactionType,
-    var state: TransferTransactionState,
 )
-
-enum class TransferTransactionType {
-    DEPOSIT,
-    WITHDRAW,
-}
-
-enum class TransferTransactionState {
-    PERFORMED,
-    ROLLBACKED,
-}

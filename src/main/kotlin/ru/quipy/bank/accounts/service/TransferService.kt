@@ -30,13 +30,11 @@ class TransferService(
         destinationBankAccountId: UUID,
         transferAmount: BigDecimal,
     ): TransferInfoResponse {
-        val srcBankAccount = bankAccountCacheRepository.findById(sourceBankAccountId).orElseThrow {
-            IllegalArgumentException("Cannot create transaction. There is no source bank account: $sourceBankAccountId")
-        }
+        val srcBankAccount = bankAccountCacheRepository.findByIdOrNull(sourceBankAccountId)
+            ?: throw IllegalArgumentException("Cannot create transaction. There is no source bank account: $sourceBankAccountId")
 
-        val dstBankAccount = bankAccountCacheRepository.findById(destinationBankAccountId).orElseThrow {
-            IllegalArgumentException("Cannot create transaction. There is no destination bank account: $destinationBankAccountId")
-        }
+        val dstBankAccount = bankAccountCacheRepository.findByIdOrNull(destinationBankAccountId)
+            ?: throw IllegalArgumentException("Cannot create transaction. There is no destination bank account: $destinationBankAccountId")
 
         val transferId = UUID.randomUUID()
         val sourceAccountId = srcBankAccount.accountId
@@ -50,7 +48,6 @@ class TransferService(
                 destinationAccountId = destinationAccountId,
                 destinationBankAccountId = destinationBankAccountId,
                 amount = transferAmount,
-                state = TransferState.PENDING,
             )
         )
 
@@ -59,23 +56,13 @@ class TransferService(
                     "from bank account $sourceBankAccountId to bank account $destinationBankAccountId"
         )
 
-        val depositOutcome = accountEsService.update(destinationAccountId) {
-            it.performTransferDeposit(
-                transferId = transferId,
-                bankAccountId = destinationBankAccountId,
-                amount = transferAmount,
-            )
-        }
-
-        val withdrawOutcome = accountEsService.update(sourceAccountId) {
+        accountEsService.update(sourceAccountId) {
             it.performTransferWithdraw(
                 transferId = transferId,
                 bankAccountId = sourceBankAccountId,
                 amount = transferAmount,
             )
         }
-
-        logger.info("Transfer: $transferId. Outcomes: $depositOutcome, $withdrawOutcome")
 
         return TransferInfoResponse(
             transferId = transferId,
@@ -85,19 +72,7 @@ class TransferService(
             state = PENDING,
         )
     }
-
-    fun getTransfer(transferId: UUID): TransferInfoResponse =
-        transferCacheRepository.findByIdOrNull(transferId)
-            ?.let {
-                TransferInfoResponse(
-                    transferId = transferId,
-                    sourceBankAccountId = it.sourceBankAccountId,
-                    destinationBankAccountId = it.destinationAccountId,
-                    amount = it.amount,
-                    state = ru.quipy.bank.accounts.dto.TransferState.valueOf(it.state.name),
-                )
-            }?: throw IllegalArgumentException("Transfer $transferId is not found!")
-    }
+}
 
 @Repository
 interface TransferCacheRepository : MongoRepository<Transfer, UUID>
@@ -111,11 +86,4 @@ data class Transfer(
     val destinationAccountId: UUID,
     val destinationBankAccountId: UUID,
     val amount: BigDecimal,
-    var state: TransferState,
 )
-
-enum class TransferState {
-    PENDING,
-    SUCCEEDED,
-    FAILED,
-}
