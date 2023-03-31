@@ -1,7 +1,5 @@
 package ru.quipy.bank.accounts.subscribers
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import ru.quipy.bank.accounts.api.AccountAggregate
 import ru.quipy.bank.accounts.api.TransferDepositRejectedEvent
@@ -11,17 +9,16 @@ import ru.quipy.bank.transfers.api.TransferAggregate
 import ru.quipy.bank.transfers.logic.Transfer
 import ru.quipy.core.EventSourcingService
 import ru.quipy.streams.AggregateSubscriptionsManager
-import java.util.UUID
+import java.util.*
 import javax.annotation.PostConstruct
 
-@Component("AccountAggregateAccountTransactionSubscriber")
-class AccountTransactionSubscriber(
+@Component
+class AccountTransactionAccountSubscriber(
     private val subscriptionsManager: AggregateSubscriptionsManager,
     private val transferEsService: EventSourcingService<UUID, TransferAggregate, Transfer>,
     private val accountEsService: EventSourcingService<UUID, AccountAggregate, Account>,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(AccountTransactionSubscriber::class.java)
-
+    
     @PostConstruct
     fun init() {
         subscriptionsManager.createSubscriber(

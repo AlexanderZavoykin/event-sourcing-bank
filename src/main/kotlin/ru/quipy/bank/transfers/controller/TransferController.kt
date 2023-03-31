@@ -11,14 +11,17 @@ import ru.quipy.bank.accounts.projections.BankAccountCacheRepository
 import ru.quipy.bank.transfers.api.TransferAggregate
 import ru.quipy.bank.transfers.api.TransferInitiatedEvent
 import ru.quipy.bank.transfers.logic.Transfer
+import ru.quipy.bank.transfers.projections.TransferProjection
+import ru.quipy.bank.transfers.projections.TransferProjectionService
 import ru.quipy.core.EventSourcingService
 import java.math.BigDecimal
-import java.util.UUID
+import java.util.*
 
 @RestController
 @RequestMapping("/transfers")
 class TransferController(
     private val transferEsService: EventSourcingService<UUID, TransferAggregate, Transfer>,
+    private val transferProjectionService: TransferProjectionService,
     private val bankAccountCacheRepository: BankAccountCacheRepository,
 ) {
 
@@ -49,8 +52,8 @@ class TransferController(
     }
 
     @GetMapping("/{transferId}")
-    fun getTransfer(@PathVariable transferId: UUID): Transfer =
-        transferEsService.getState(transferId)
-            ?: throw IllegalArgumentException("Transfer $transferId does not exist")
+    fun getTransfer(@PathVariable transferId: UUID): TransferProjection =
+        transferProjectionService.findByTransferId(transferId)
+            ?: throw IllegalArgumentException("Transfer $transferId is not found")
 
 }

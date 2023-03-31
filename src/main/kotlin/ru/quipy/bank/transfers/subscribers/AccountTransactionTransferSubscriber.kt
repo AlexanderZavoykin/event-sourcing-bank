@@ -13,7 +13,7 @@ import java.util.UUID
 import javax.annotation.PostConstruct
 
 @Component
-class AccountTransactionSubscriber(
+class AccountTransactionTransferSubscriber(
     private val subscriptionsManager: AggregateSubscriptionsManager,
     private val transferEsService: EventSourcingService<UUID, TransferAggregate, Transfer>,
 ) {
